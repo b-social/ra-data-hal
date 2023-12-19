@@ -34,12 +34,12 @@
     "registry": "https://registry.npmjs.org"
   },
   "dependencies": {
-    "halboy": "^0.8.6",
+    "halboy": "^0.9.0",
     "inflection": "^1.12.0",
     "qs": "^6.7.0",
     "ramda": "^0.26.1",
     "react": "^16.8.6",
-    "react-admin": "^2.9.1",
+    "react-admin": "^3.0.0",
     "react-dom": "^16.8.6"
   },
   "devDependencies": {
