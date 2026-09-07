@@ -32,6 +32,8 @@ const log = (request, result) => {
 
 const getId = id => (id && id.includes(':') ? last(split(':', id)) : id)
 
+const queryParams = params => params.queryParams || {}
+
 const navToResult = async (navigator, method = 'get', ...args) => {
   const resourceResult = await navigator[method](...args)
 
@@ -90,7 +92,10 @@ const handleRequest = async (
 
   switch (type) {
     case GET_LIST: {
-      const fullParams = buildReactAdminParams(params)
+      const fullParams = {
+        ...queryParams(params),
+        ...buildReactAdminParams(params)
+      }
       const resource = await navToResource(
         discoveryResult,
         'get',
@@ -115,7 +120,7 @@ const handleRequest = async (
         data: (await getSingleResource(
           discoveryResult,
           resourceName,
-          { id: getId(params.id) },
+          { ...queryParams(params), id: getId(params.id) },
           { ...headerOptions }
         )).toObject()
       }
@@ -144,7 +149,7 @@ const handleRequest = async (
           (await getSingleResource(
             discoveryResult,
             resourceName,
-            { id },
+            { ...queryParams(params), id },
             { ...headerOptions }
           )).toObject()
         )
@@ -159,6 +164,7 @@ const handleRequest = async (
         'get',
         resourceName,
         {
+          ...queryParams(params),
           ...buildReactAdminParams(params),
           [params.target]: params.id
         },
@@ -198,7 +204,7 @@ const handleRequest = async (
       const getResult = await getSingleResult(
         discoveryResult,
         inflection.singularize(resourceName),
-        { id: getId(params.id) },
+        { ...queryParams(params), id: getId(params.id) },
         { ...headerOptions }
       )
       const data = getResult.resource().toObject()
