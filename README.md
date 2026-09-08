@@ -1,11 +1,14 @@
-# ra-data-hal
+# @kroo-web/ra-data-hal
 
 A HAL data provider for react-admin.
+
+This supersedes the unscoped `ra-data-hal` package, which is no longer
+maintained and stops at 2.7.1.
 
 ## Installation
 
 ```bash
-npm install --save ra-data-hal
+npm install --save @kroo-web/ra-data-hal
 ```
 
 ## Query parameters
