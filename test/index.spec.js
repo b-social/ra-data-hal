@@ -357,6 +357,165 @@ describe('react-admin HAL data provider', () => {
     })
   })
 
+  describe('with queryParams', () => {
+    it('sends queryParams on GET_ONE', async () => {
+      const apiUrl = faker.internet.url()
+      const postId = faker.random.uuid()
+
+      const postResource = new Resource()
+        .addLinks({ self: `${apiUrl}/posts/${postId}` })
+        .addProperties({ id: postId, title: 'My first post' })
+
+      api.onDiscover(apiUrl, {
+        self: `${apiUrl}/`,
+        post: { href: `${apiUrl}/posts/{id}`, templated: true }
+      })
+
+      api.onGet(apiUrl, `/posts/${postId}?includeDetails=true`, postResource)
+
+      const dataProvider = halDataProvider(apiUrl)
+      const result = await dataProvider(GET_ONE, 'posts', {
+        id: postId,
+        queryParams: { includeDetails: 'true' }
+      })
+
+      expect(result.data.id).to.eql(postId)
+    })
+
+    it('expands queryParams into the link when the template declares it', async () => {
+      const apiUrl = faker.internet.url()
+      const postId = faker.random.uuid()
+
+      const postResource = new Resource()
+        .addLinks({ self: `${apiUrl}/posts/${postId}` })
+        .addProperties({ id: postId })
+
+      api.onDiscover(apiUrl, {
+        self: `${apiUrl}/`,
+        post: { href: `${apiUrl}/posts/{id}{?includeDetails}`, templated: true }
+      })
+
+      api.onGet(apiUrl, `/posts/${postId}?includeDetails=true`, postResource)
+
+      const dataProvider = halDataProvider(apiUrl)
+      const result = await dataProvider(GET_ONE, 'posts', {
+        id: postId,
+        queryParams: { includeDetails: 'true' }
+      })
+
+      expect(result.data.id).to.eql(postId)
+    })
+
+    it('omits the query param when no queryParams are given', async () => {
+      const apiUrl = faker.internet.url()
+      const postId = faker.random.uuid()
+
+      const postResource = new Resource()
+        .addLinks({ self: `${apiUrl}/posts/${postId}` })
+        .addProperties({ id: postId })
+
+      api.onDiscover(apiUrl, {
+        self: `${apiUrl}/`,
+        post: { href: `${apiUrl}/posts/{id}{?includeDetails}`, templated: true }
+      })
+
+      api.onGet(apiUrl, `/posts/${postId}`, postResource)
+
+      const dataProvider = halDataProvider(apiUrl)
+      const result = await dataProvider(GET_ONE, 'posts', { id: postId })
+
+      expect(result.data.id).to.eql(postId)
+    })
+
+    it('cannot override the id with queryParams', async () => {
+      const apiUrl = faker.internet.url()
+      const postId = faker.random.uuid()
+
+      const postResource = new Resource()
+        .addLinks({ self: `${apiUrl}/posts/${postId}` })
+        .addProperties({ id: postId })
+
+      api.onDiscover(apiUrl, {
+        self: `${apiUrl}/`,
+        post: { href: `${apiUrl}/posts/{id}`, templated: true }
+      })
+
+      api.onGet(apiUrl, `/posts/${postId}`, postResource)
+
+      const dataProvider = halDataProvider(apiUrl)
+      const result = await dataProvider(GET_ONE, 'posts', {
+        id: postId,
+        queryParams: { id: 'not-this-one' }
+      })
+
+      expect(result.data.id).to.eql(postId)
+    })
+
+    it('sends queryParams on each request for GET_MANY', async () => {
+      const apiUrl = faker.internet.url()
+      const firstId = faker.random.uuid()
+      const secondId = faker.random.uuid()
+
+      const first = new Resource()
+        .addLinks({ self: `${apiUrl}/posts/${firstId}` })
+        .addProperties({ id: firstId })
+      const second = new Resource()
+        .addLinks({ self: `${apiUrl}/posts/${secondId}` })
+        .addProperties({ id: secondId })
+
+      api.onDiscover(apiUrl, {
+        self: `${apiUrl}/`,
+        post: { href: `${apiUrl}/posts/{id}`, templated: true }
+      })
+
+      api.onGet(apiUrl, `/posts/${firstId}?includeDetails=true`, first)
+      api.onGet(apiUrl, `/posts/${secondId}?includeDetails=true`, second)
+
+      const dataProvider = halDataProvider(apiUrl)
+      const result = await dataProvider(GET_MANY, 'posts', {
+        ids: [firstId, secondId],
+        queryParams: { includeDetails: 'true' }
+      })
+
+      expect(result.total).to.eql(2)
+    })
+
+    it('merges queryParams alongside pagination, sort and filter on GET_LIST', async () => {
+      const apiUrl = faker.internet.url()
+
+      const postsResource = new Resource()
+        .addResource('posts', [])
+        .addProperty('totalPosts', 0)
+
+      const expectedQueryString = qs.stringify(
+        {
+          page: 1,
+          perPage: 10,
+          sort: '["title","asc"]',
+          filter: [],
+          includeDetails: 'true'
+        },
+        { arrayFormat: 'repeat' }
+      )
+
+      api.onDiscover(apiUrl, {
+        self: `${apiUrl}/`,
+        posts: `${apiUrl}/posts`
+      })
+
+      api.onGet(apiUrl, `/posts?${expectedQueryString}`, postsResource)
+
+      const dataProvider = halDataProvider(apiUrl)
+      const result = await dataProvider(GET_LIST, 'posts', {
+        pagination: { page: 1, perPage: 10 },
+        sort: { field: 'title', order: 'ASC' },
+        queryParams: { includeDetails: 'true' }
+      })
+
+      expect(result.total).to.eql(0)
+    })
+  })
+
   describe('on CREATE', () => {
     it('posts to resource based on discovery', async () => {
       const apiUrl = faker.internet.url()
