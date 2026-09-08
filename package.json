@@ -1,6 +1,6 @@
 {
   "name": "@kroo-web/ra-data-hal",
-  "version": "2.8.0",
+  "version": "2.8.1",
   "description": "A HAL data provider for react-admin.",
   "main": "lib/index.js",
   "scripts": {
